@@ -1,0 +1,88 @@
+{
+  "log": {
+    "logelevel": "info"
+  },
+  // Run a local SOCKS proxy for apps to connect to.
+  "inbounds": [{
+    "port": 1080,
+    "listen": "127.0.0.1",
+    "protocol": "socks",
+    "sniffing": {
+      "enabled": true,
+      "destOverride": ["http", "tls"]
+    },
+    "settings": {
+      "udp": true
+    }
+  },
+  {
+    "port": 8880,
+    "listen": "127.0.0.1",
+    "protocol": "http",
+    "sniffing": {
+      "enabled": true,
+      "destOverride": ["http", "tls"]
+    },
+    "settings": {
+      "allowTransparent": true
+    }
+  }],
+  "outbounds": [{
+    // Add our v2Ray server as an outbound destination. 
+    "protocol": "vmess",
+    "settings": {
+      "vnext": [{
+        "address": "ip.here", 
+        "port": 443,
+        "users": [{
+    "id": "aaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbbbb",
+    "alterId": 0
+  }]
+      }]
+    },
+      "streamSettings": {
+        "network": "ws",
+        "security": "tls",
+        "tlssettings": {
+          "allowInsecure": false,
+          "serverName": "static.cldcdn.net"
+        },
+        "wssettings": {
+    "connectionReuse": true,
+          "path": "/ray",
+    "headers": {
+            "Host": "static.cldcdn.net"
+          }
+        }
+    }
+  },{
+    // Add a destination for traffic that should NOT go to the VPN.
+    "protocol": "freedom",
+    "tag": "direct",
+    "settings": {}
+  }],
+  "routing": {
+    "domainStrategy": "IPOnDemand",
+    "rules": [
+    {
+      // Don't send LAN traffic to the VPN.
+      "ip": ["geoip:private"],
+      "outboundTag": "direct",
+      "type": "field"
+    },
+    {
+      // Don't send Chinese IP's to the VPN.
+      "ip": ["geoip:cn"],
+      "outboundTag": "direct",
+      "type": "field"
+    },
+    {
+      // Don't send .cn domains to the VPN.
+      "domain": ["geosite:cn"],
+      "outboundTag": "direct",
+      "type": "field"
+    }
+    // Everything else goes to VPN server.
+    ]
+  }
+}
